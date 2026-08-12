@@ -20,8 +20,6 @@ Generate Standard and Promo retail files from:
 - Master Price List
 
 Supported Retailers:
-- Circle K
-- Global Legacy
 - EG America
 """)
 
@@ -34,7 +32,7 @@ st.divider()
 retailer = st.selectbox(
     "Retailer",
     [
-        "Circle K / Global Legacy",
+        "Circle K",
         "EG America"
     ]
 )
