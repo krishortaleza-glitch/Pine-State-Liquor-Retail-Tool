@@ -21,6 +21,7 @@ Generate Standard and Promo retail files from:
 
 Supported Retailers:
 - Circle K
+- Global Legacy
 - EG America
 """)
 
