@@ -85,17 +85,6 @@ def read_master(uploaded_file):
 def clean_uid(series):
     """
     Normalize UPC / UID values.
-
-    Examples
-    --------
-    0006270
-    06270
-    6270
-    6270.0
-
-    becomes
-
-    6270
     """
 
     return (
@@ -197,10 +186,6 @@ if vendor_file and master_file:
     )
 
     # ======================================================
-    # PART 2 STARTS HERE
-    # ======================================================
-
-    # ======================================================
     # PART 2 - Data Preparation
     # ======================================================
 
@@ -209,16 +194,17 @@ if vendor_file and master_file:
         text="Cleaning data..."
     )
 
-    # -----------------------------
     # Normalize Vendor IDs
-    # -----------------------------
 
-    vendor["vendorProductUID"] = clean_uid(vendor["vendorProductUID"])
-    vendor["retailProductUID"] = clean_uid(vendor["retailProductUID"])
+    vendor["vendorProductUID"] = clean_uid(
+        vendor["vendorProductUID"]
+    )
 
-    # -----------------------------
+    vendor["retailProductUID"] = clean_uid(
+        vendor["retailProductUID"]
+    )
+
     # Retailer-specific Lookup Key
-    # -----------------------------
 
     if retailer == "Circle K":
 
@@ -238,9 +224,7 @@ if vendor_file and master_file:
         master["LookupKey"].notna()
     ].copy()
 
-    # -----------------------------
     # Retail Prices
-    # -----------------------------
 
     master["Retail Price"] = pd.to_numeric(
         master["Retail Price"],
@@ -259,18 +243,14 @@ if vendor_file and master_file:
         .mask(master["Sales Price"].fillna(0) == 0)
     )
 
-    # -----------------------------
     # Remove duplicate lookup keys
-    # -----------------------------
 
     master = master.drop_duplicates(
         subset="LookupKey",
         keep="first"
     )
 
-    # -----------------------------
     # Pack Type
-    # -----------------------------
 
     vendor["Pack Type"] = (
         vendor["group"]
@@ -290,11 +270,6 @@ if vendor_file and master_file:
     )
 
     # ======================================================
-    # PART 3 STARTS HERE
-    # Matching Engine
-    # ======================================================
-
-    # ======================================================
     # PART 3 - Matching Engine
     # ======================================================
 
@@ -304,6 +279,7 @@ if vendor_file and master_file:
     )
 
     # Create output columns
+
     vendor["Retail"] = pd.NA
     vendor["PromoRetail"] = pd.NA
 
@@ -347,7 +323,10 @@ if vendor_file and master_file:
 
         total = len(vendor)
 
-        for i, row in enumerate(vendor.itertuples(), start=1):
+        for i, row in enumerate(
+            vendor.itertuples(),
+            start=1
+        ):
 
             vendor_upc = row.vendorProductUID
 
@@ -356,9 +335,7 @@ if vendor_file and master_file:
 
             vendor_upc = str(vendor_upc)
 
-            # -------------------------
             # 1. Exact Match
-            # -------------------------
 
             exact = master[
                 master["LookupKey"] == vendor_upc
@@ -366,14 +343,17 @@ if vendor_file and master_file:
 
             if len(exact) == 1:
 
-                vendor.at[row.Index, "Retail"] = exact.iloc[0]["Retail Price"]
-                vendor.at[row.Index, "PromoRetail"] = exact.iloc[0]["Sales Price"]
+                vendor.at[row.Index, "Retail"] = (
+                    exact.iloc[0]["Retail Price"]
+                )
+
+                vendor.at[row.Index, "PromoRetail"] = (
+                    exact.iloc[0]["Sales Price"]
+                )
 
                 continue
 
-            # -------------------------
             # 2. Contains Match
-            # -------------------------
 
             contains = master[
                 master["LookupKey"].str.contains(
@@ -387,22 +367,29 @@ if vendor_file and master_file:
 
             if len(contains) == 1:
 
-                vendor.at[row.Index, "Retail"] = contains.iloc[0]["Retail Price"]
-                vendor.at[row.Index, "PromoRetail"] = contains.iloc[0]["Sales Price"]
+                vendor.at[row.Index, "Retail"] = (
+                    contains.iloc[0]["Retail Price"]
+                )
+
+                vendor.at[row.Index, "PromoRetail"] = (
+                    contains.iloc[0]["Sales Price"]
+                )
 
             # Multiple matches are ignored intentionally
 
             if i % 500 == 0:
 
                 progress.progress(
-                    min(95, 80 + int((i / total) * 15)),
-                    text=f"Matching EG America... {i:,}/{total:,}"
+                    min(
+                        95,
+                        80 + int((i / total) * 15)
+                    ),
+                    text=(
+                        f"Matching EG America... "
+                        f"{i:,}/{total:,}"
+                    )
                 )
 
-    # ======================================================
-    # PART 4 STARTS HERE
-    # Build Output Files
-    # ======================================================
     # ======================================================
     # PART 4 - Build Output Files
     # ======================================================
@@ -453,6 +440,9 @@ if vendor_file and master_file:
         "RetailUID": vendor["retailProductUID"],
 
         "Retail": vendor["PromoRetail"],
+
+        # Hard-coded Quantity column
+        "Quantity": 1,
 
         "Pack Type": vendor["Pack Type"],
 
@@ -512,16 +502,15 @@ if vendor_file and master_file:
     )
 
     # ======================================================
-    # PART 5 STARTS HERE
-    # Export Workbook
-    # ======================================================
-    # ======================================================
     # PART 5 - Export Workbook
     # ======================================================
 
     output = BytesIO()
 
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+    with pd.ExcelWriter(
+        output,
+        engine="openpyxl"
+    ) as writer:
 
         standard.to_excel(
             writer,
@@ -548,10 +537,12 @@ if vendor_file and master_file:
         text="Complete!"
     )
 
-    st.success("Retail files generated successfully!")
+    st.success(
+        "Retail files generated successfully!"
+    )
 
     st.divider()
-  
+
     # ======================================================
     # Download
     # ======================================================
